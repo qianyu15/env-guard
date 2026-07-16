@@ -1,65 +1,63 @@
-
 # env-guard
 
-A lightweight CLI tool that detects secrets before they are committed to GitHub.
+A lightweight background CLI tool that monitors `.env` files and detects possible secrets in real time.
 
 ## Features
 
-- Detect `.env` files
-- Detect API keys and tokens
-- Detect private keys
-- Block dangerous commits
-- Simple Git hook integration
+* Real-time `.env` file monitoring
+* Detect API keys, tokens, passwords, and private keys
+* Runs as a background watcher
+* Simple CLI usage
 
 ## Installation
 
 ```bash
 npm install -g env-guard
-````
+```
 
 ## Usage
 
-Run in your Git repository:
+Start monitoring:
 
 ```bash
 env-guard
 ```
 
-Example output:
+Example:
 
+```text
+🛡️ env-guard daemon started
+
+.env changed
+
+🚨 env-guard detected sensitive data
+
+- API Key
+- Token
 ```
-🚨 env-guard blocked commit
-
-- .env: sensitive file detected
-- config.js: possible secret detected
-
-Remove secrets before pushing to GitHub.
-```
-
-## Git Hook Setup
-
-Add `env-guard` to your pre-commit hook:
-
-```bash
-echo "env-guard" > .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-Now commits containing possible secrets will be blocked automatically.
 
 ## Detected Patterns
 
 Currently checks:
 
-* `.env`
-* `.env.local`
-* `.env.production`
-* API keys
-* Secret keys
-* Access tokens
-* Private keys
+* `API_KEY`
+* `SECRET`
+* `TOKEN`
+* `PASSWORD`
+* Private key format
+
+## Stop
+
+Press:
+
+```text
+Ctrl + C
+```
+
+## Use Case
+
+env-guard helps prevent accidentally exposing sensitive environment variables during development.
 
 ## License
 
 MIT
-
