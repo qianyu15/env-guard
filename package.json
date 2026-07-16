@@ -1,13 +1,16 @@
 {
   "name": "env-guard",
   "version": "0.1.0",
-  "description": "A simple CLI tool to prevent committing secrets to GitHub.",
+  "description": "A background CLI monitor for detecting .env secret changes.",
   "type": "module",
   "bin": {
-    "env-guard": "./bin/env-guard"
+    "env-guard": "./index.js"
   },
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.0"
   },
   "license": "MIT"
 }
