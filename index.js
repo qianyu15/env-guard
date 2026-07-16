@@ -1,101 +1,106 @@
 #!/usr/bin/env node
 
+import chokidar from "chokidar";
 import fs from "fs";
-import { execSync } from "child_process";
 
 
-const blockedFiles = [
-  ".env",
-  ".env.local",
-  ".env.production",
-  "private.key",
-  "id_rsa"
+const target = ".env";
+
+
+const rules = [
+  {
+    name: "API Key",
+    regex: /API[_-]?KEY\s*=/i
+  },
+  {
+    name: "Secret",
+    regex: /SECRET\s*=/i
+  },
+  {
+    name: "Token",
+    regex: /TOKEN\s*=/i
+  },
+  {
+    name: "Password",
+    regex: /PASSWORD\s*=/i
+  },
+  {
+    name: "Private Key",
+    regex: /-----BEGIN PRIVATE KEY-----/
+  }
 ];
 
 
-const secretPatterns = [
-  /API[_-]?KEY\s*=/i,
-  /SECRET[_-]?KEY\s*=/i,
-  /ACCESS[_-]?TOKEN\s*=/i,
-  /PASSWORD\s*=/i,
-  /-----BEGIN PRIVATE KEY-----/
-];
+let lastContent = "";
 
 
-function getStagedFiles() {
-  try {
-    return execSync(
-      "git diff --cached --name-only",
-      { encoding: "utf8" }
-    )
-      .split("\n")
-      .filter(Boolean);
+function checkEnv() {
 
-  } catch {
-    return [];
-  }
-}
-
-
-function scanFiles(files) {
-
-  const warnings = [];
-
-  for (const file of files) {
-
-    if (blockedFiles.some(x => file.endsWith(x))) {
-      warnings.push(
-        `${file}: sensitive file detected`
-      );
-    }
-
-
-    if (!fs.existsSync(file)) continue;
-
-
-    const content =
-      fs.readFileSync(file, "utf8");
-
-
-    for (const pattern of secretPatterns) {
-
-      if (pattern.test(content)) {
-
-        warnings.push(
-          `${file}: possible secret detected`
-        );
-
-      }
-
-    }
+  if (!fs.existsSync(target)) {
+    return;
   }
 
-  return warnings;
-}
+
+  const content =
+    fs.readFileSync(target, "utf8");
 
 
-
-const files = getStagedFiles();
-const warnings = scanFiles(files);
-
-
-if (warnings.length > 0) {
-
-  console.log("\n🚨 env-guard blocked commit\n");
-
-  for (const warning of warnings) {
-    console.log(`- ${warning}`);
+  if (content === lastContent) {
+    return;
   }
 
-  console.log(
-    "\nRemove secrets before pushing to GitHub.\n"
+
+  lastContent = content;
+
+
+  const found = rules.filter(rule =>
+    rule.regex.test(content)
   );
 
-  process.exit(1);
+
+  if (found.length) {
+
+    console.log(
+      "\n🚨 env-guard detected sensitive data"
+    );
+
+
+    found.forEach(item =>
+      console.log(
+        `- ${item.name}`
+      )
+    );
+
+
+    console.log(
+      "Review your .env file.\n"
+    );
+
+  }
 
 }
 
 
 console.log(
-  "✅ env-guard: no secrets found"
+  "🛡️ env-guard daemon started"
 );
+
+
+chokidar
+.watch(target, {
+  ignoreInitial: false
+})
+.on("add", checkEnv)
+.on("change", checkEnv);
+
+
+
+process.on("SIGINT", () => {
+
+  console.log(
+    "\nenv-guard stopped"
+  );
+
+  process.exit(0);
+
+});
